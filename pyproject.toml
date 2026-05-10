@@ -46,6 +46,28 @@ path = "src/iil_codeguard/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/iil_codeguard"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/iil_codeguard",
+    "tests",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "ROADMAP.md",
+    "pyproject.toml",
+    ".pre-commit-hooks.yaml",
+    "github_actions",
+]
+exclude = [
+    ".windsurf",
+    ".venv",
+    ".github",
+    ".pytest_cache",
+    ".ruff_cache",
+    "dist",
+    "build",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
