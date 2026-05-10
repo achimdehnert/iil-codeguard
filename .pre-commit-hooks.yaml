@@ -1,0 +1,15 @@
+- id: codeguard
+  name: iil-codeguard audit
+  description: Audit Django/HTMX/Docker compliance per IIL Platform ADRs
+  entry: codeguard audit . --format text --severity-threshold error --exit-code
+  language: python
+  pass_filenames: false
+  stages: [pre-commit, pre-push]
+
+- id: codeguard-changed
+  name: iil-codeguard (changed files only)
+  description: Audit only files staged in this commit
+  entry: codeguard check-file
+  language: python
+  files: \.(py|html)$
+  exclude: ^(\.venv/|venv/|node_modules/|build/|dist/)
