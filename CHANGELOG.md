@@ -2,6 +2,48 @@
 
 All notable changes to iil-codeguard. CalVer (`YYYY.MM.PATCH`).
 
+## 2026.05.1 — 2026-05-10
+
+Phase 2b + 2c (per ROADMAP).
+
+### Added
+
+- **Compose checker** (`DC-001..009`): structural YAML audit
+  - `DC-001` ${VAR} interpolation in environment block (critical)
+  - `DC-002` Web service missing env_file
+  - `DC-003` Web service missing healthcheck
+  - `DC-004` Service missing memory limit
+  - `DC-005` Image not from ghcr.io/achimdehnert/
+  - `DC-006` Service missing restart policy
+  - `DC-007` Public port binding (0.0.0.0)
+  - `DC-008` No separate `migrate` service
+  - `DC-009` Worker/Beat with `celery inspect ping` instead of `pidof python3.12`
+- **Dockerfile checker** (`DF-001..009`): line-based audit
+  - `DF-001` HEALTHCHECK in Dockerfile (now an **error** per ADR-193 v1.1, Coach-hub Incident)
+  - `DF-003` Missing USER instruction
+  - `DF-004` Missing OCI labels
+  - `DF-005` Single-stage build
+  - `DF-006` StrictHostKeyChecking=no (critical)
+  - `DF-007` Hardcoded server IP 88.198.191.108 (critical)
+  - `DF-008` Hardcoded secret (critical)
+  - `DF-009` Non-standard base image
+- **MCP server** (`iil-codeguard-mcp`): FastMCP-based, 3 read-only tools
+  - `codeguard_audit` — repo-level audit, summary by default for token budget
+  - `codeguard_check_file` — single-file check
+  - `codeguard_list_rules` — enumerate all registered rules
+- **Tests** grew from 37 → 69 passing
+
+### Empirical Validation (incl. Phase 2c)
+
+Across 5 platform repos:
+- bfagent: **14 critical**, 925 errors (DF rules surfaced hardcoded secrets)
+- weltenhub: 1 critical, 38 errors
+- travel-beat: 2 critical, 31 errors
+- dev-hub: 2 critical, 42 errors
+- coach-hub: 0 critical, 34 errors
+
+Total: **17 critical findings** that REFLEX did not detect.
+
 ## 2026.05.0 — 2026-05-10
 
 Initial release. Implements Phase 1a–1c + 2a from ROADMAP.md.
