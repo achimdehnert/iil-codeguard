@@ -11,3 +11,5 @@ dist/
 htmlcov/
 *.sarif
 .DS_Store
+NEXT.md
+.windsurfignore
