@@ -13,3 +13,4 @@ htmlcov/
 .DS_Store
 NEXT.md
 .windsurfignore
+.windsurf/
