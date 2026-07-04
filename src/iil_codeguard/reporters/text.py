@@ -9,9 +9,9 @@ from iil_codeguard.domain import AuditResult, Severity
 
 _SEVERITY_COLORS = {
     Severity.CRITICAL: "\033[1;31m",  # bold red
-    Severity.ERROR: "\033[31m",       # red
-    Severity.WARNING: "\033[33m",     # yellow
-    Severity.INFO: "\033[36m",        # cyan
+    Severity.ERROR: "\033[31m",  # red
+    Severity.WARNING: "\033[33m",  # yellow
+    Severity.INFO: "\033[36m",  # cyan
 }
 _RESET = "\033[0m"
 
@@ -24,10 +24,13 @@ def render(result: AuditResult, use_color: bool | None = None) -> str:
     out = StringIO()
 
     if not result.findings:
-        out.write(_color(
-            f"No findings ({result.files_scanned} files scanned in {result.duration_ms} ms)\n",
-            "\033[32m", use_color,
-        ))
+        out.write(
+            _color(
+                f"No findings ({result.files_scanned} files scanned in {result.duration_ms} ms)\n",
+                "\033[32m",
+                use_color,
+            )
+        )
         return out.getvalue()
 
     # Group by file
@@ -45,8 +48,7 @@ def render(result: AuditResult, use_color: bool | None = None) -> str:
             severity_str = f.severity.value.upper().ljust(8)
             location = f"{f.location.start_line}:{f.location.start_column}"
             out.write(
-                f"  {_color(severity_str, color, use_color)} "
-                f"{f.rule_id}  {location}  {f.message}\n"
+                f"  {_color(severity_str, color, use_color)} {f.rule_id}  {location}  {f.message}\n"
             )
             if f.fix_hint:
                 out.write(f"           {_color('hint:', '\033[2m', use_color)} {f.fix_hint}\n")
@@ -60,10 +62,7 @@ def render(result: AuditResult, use_color: bool | None = None) -> str:
             color = _SEVERITY_COLORS[sev]
             parts.append(_color(f"{n} {sev.value}", color, use_color))
     summary = ", ".join(parts) or "0 findings"
-    out.write(
-        f"\nSummary: {summary} "
-        f"({result.files_scanned} files, {result.duration_ms} ms)\n"
-    )
+    out.write(f"\nSummary: {summary} ({result.files_scanned} files, {result.duration_ms} ms)\n")
     return out.getvalue()
 
 

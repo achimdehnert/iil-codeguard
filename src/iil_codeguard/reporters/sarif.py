@@ -21,18 +21,20 @@ def _to_sarif(result: AuditResult) -> dict:
     return {
         "version": "2.1.0",
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
-        "runs": [{
-            "tool": {
-                "driver": {
-                    "name": "iil-codeguard",
-                    "version": __version__,
-                    "informationUri": "https://github.com/achimdehnert/iil-codeguard",
-                    "rules": _rules_for_findings(result),
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "iil-codeguard",
+                        "version": __version__,
+                        "informationUri": "https://github.com/achimdehnert/iil-codeguard",
+                        "rules": _rules_for_findings(result),
+                    },
                 },
-            },
-            "results": [_finding_to_result(f) for f in result.findings],
-            "columnKind": "utf16CodeUnits",
-        }],
+                "results": [_finding_to_result(f) for f in result.findings],
+                "columnKind": "utf16CodeUnits",
+            }
+        ],
     }
 
 
@@ -46,23 +48,27 @@ def _rules_for_findings(result: AuditResult) -> list[dict]:
         seen.add(f.rule_id)
         meta = RULE_REGISTRY.get(f.rule_id)
         if meta is None:
-            rules.append({
-                "id": f.rule_id,
-                "shortDescription": {"text": f.rule_id},
-                "fullDescription": {"text": f.rule_id},
-            })
+            rules.append(
+                {
+                    "id": f.rule_id,
+                    "shortDescription": {"text": f.rule_id},
+                    "fullDescription": {"text": f.rule_id},
+                }
+            )
             continue
-        rules.append({
-            "id": meta.rule_id,
-            "name": meta.name,
-            "shortDescription": {"text": meta.description},
-            "fullDescription": {"text": meta.description},
-            "defaultConfiguration": {"level": meta.severity.sarif_level()},
-            "properties": {
-                "category": meta.category,
-                "adr_refs": list(meta.adr_refs),
-            },
-        })
+        rules.append(
+            {
+                "id": meta.rule_id,
+                "name": meta.name,
+                "shortDescription": {"text": meta.description},
+                "fullDescription": {"text": meta.description},
+                "defaultConfiguration": {"level": meta.severity.sarif_level()},
+                "properties": {
+                    "category": meta.category,
+                    "adr_refs": list(meta.adr_refs),
+                },
+            }
+        )
     return rules
 
 
@@ -80,17 +86,21 @@ def _finding_to_result(finding) -> dict:
         "ruleId": finding.rule_id,
         "level": finding.severity.sarif_level(),
         "message": {"text": finding.message},
-        "locations": [{
-            "physicalLocation": {
-                "artifactLocation": {"uri": finding.location.file_path},
-                "region": region,
-            },
-        }],
+        "locations": [
+            {
+                "physicalLocation": {
+                    "artifactLocation": {"uri": finding.location.file_path},
+                    "region": region,
+                },
+            }
+        ],
     }
     if finding.fix_hint:
-        result["fixes"] = [{
-            "description": {"text": finding.fix_hint},
-        }]
+        result["fixes"] = [
+            {
+                "description": {"text": finding.fix_hint},
+            }
+        ]
     if finding.context:
         result["properties"] = dict(finding.context)
     return result

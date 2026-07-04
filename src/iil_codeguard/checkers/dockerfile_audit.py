@@ -20,49 +20,89 @@ from iil_codeguard.domain import (
 
 # Rule registration ---------------------------------------------------------
 
-register_rule(RuleMeta(
-    rule_id="DF-001", name="healthcheck-in-dockerfile",
-    description=(
-        "HEALTHCHECK in Dockerfile applies to all containers (web+worker+beat) "
-        "— move to per-service block in compose (ADR-021 §2.4)"
-    ),
-    severity=Severity.ERROR, category="DF", adr_refs=("ADR-021", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DF-003", name="missing-non-root-user",
-    description="Dockerfile has no USER instruction — runs as root by default",
-    severity=Severity.WARNING, category="DF", adr_refs=("ADR-056", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DF-004", name="missing-oci-labels",
-    description="Dockerfile missing OCI labels (LABEL org.opencontainers.image.*)",
-    severity=Severity.INFO, category="DF", adr_refs=("ADR-056", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DF-005", name="single-stage-build",
-    description="Dockerfile uses single-stage build — multi-stage recommended",
-    severity=Severity.WARNING, category="DF", adr_refs=("ADR-056", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DF-006", name="strict-host-key-checking-no",
-    description="Dockerfile contains `StrictHostKeyChecking=no` — security violation",
-    severity=Severity.CRITICAL, category="DF", adr_refs=("ADR-193",),
-))
-register_rule(RuleMeta(
-    rule_id="DF-007", name="hardcoded-server-ip",
-    description="Dockerfile contains hardcoded server IP `88.198.191.108`",
-    severity=Severity.CRITICAL, category="DF", adr_refs=("ADR-193",),
-))
-register_rule(RuleMeta(
-    rule_id="DF-008", name="hardcoded-secret",
-    description="Dockerfile contains hardcoded secret (SECRET_KEY=, password=, API_KEY=)",
-    severity=Severity.CRITICAL, category="DF", adr_refs=("ADR-193",),
-))
-register_rule(RuleMeta(
-    rule_id="DF-009", name="non-standard-base-image",
-    description="Base image is not python:3.12-slim (platform standard)",
-    severity=Severity.WARNING, category="DF", adr_refs=("ADR-193",),
-))
+register_rule(
+    RuleMeta(
+        rule_id="DF-001",
+        name="healthcheck-in-dockerfile",
+        description=(
+            "HEALTHCHECK in Dockerfile applies to all containers (web+worker+beat) "
+            "— move to per-service block in compose (ADR-021 §2.4)"
+        ),
+        severity=Severity.ERROR,
+        category="DF",
+        adr_refs=("ADR-021", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DF-003",
+        name="missing-non-root-user",
+        description="Dockerfile has no USER instruction — runs as root by default",
+        severity=Severity.WARNING,
+        category="DF",
+        adr_refs=("ADR-056", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DF-004",
+        name="missing-oci-labels",
+        description="Dockerfile missing OCI labels (LABEL org.opencontainers.image.*)",
+        severity=Severity.INFO,
+        category="DF",
+        adr_refs=("ADR-056", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DF-005",
+        name="single-stage-build",
+        description="Dockerfile uses single-stage build — multi-stage recommended",
+        severity=Severity.WARNING,
+        category="DF",
+        adr_refs=("ADR-056", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DF-006",
+        name="strict-host-key-checking-no",
+        description="Dockerfile contains `StrictHostKeyChecking=no` — security violation",
+        severity=Severity.CRITICAL,
+        category="DF",
+        adr_refs=("ADR-193",),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DF-007",
+        name="hardcoded-server-ip",
+        description="Dockerfile contains hardcoded server IP `88.198.191.108`",
+        severity=Severity.CRITICAL,
+        category="DF",
+        adr_refs=("ADR-193",),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DF-008",
+        name="hardcoded-secret",
+        description="Dockerfile contains hardcoded secret (SECRET_KEY=, password=, API_KEY=)",
+        severity=Severity.CRITICAL,
+        category="DF",
+        adr_refs=("ADR-193",),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DF-009",
+        name="non-standard-base-image",
+        description="Base image is not python:3.12-slim (platform standard)",
+        severity=Severity.WARNING,
+        category="DF",
+        adr_refs=("ADR-193",),
+    )
+)
 
 
 # Detection patterns --------------------------------------------------------
@@ -84,6 +124,7 @@ _HARDCODED_SECRET_RE = re.compile(
 
 
 # Public API ----------------------------------------------------------------
+
 
 def check_file(file_path: Path) -> list[Finding]:
     """Audit a single Dockerfile."""
@@ -107,15 +148,19 @@ def check_file(file_path: Path) -> list[Finding]:
 
         # DF-001: HEALTHCHECK present
         if _HEALTHCHECK_RE.match(line):
-            findings.append(_f(
-                "DF-001", Severity.ERROR,
-                "HEALTHCHECK in Dockerfile applies to all derived containers — move to compose",
-                file_path, idx,
-                fix_hint=(
-                    "Remove HEALTHCHECK here; add per-service `healthcheck:` block to "
-                    "docker-compose.prod.yml"
-                ),
-            ))
+            findings.append(
+                _f(
+                    "DF-001",
+                    Severity.ERROR,
+                    "HEALTHCHECK in Dockerfile applies to all derived containers — move to compose",
+                    file_path,
+                    idx,
+                    fix_hint=(
+                        "Remove HEALTHCHECK here; add per-service `healthcheck:` block to "
+                        "docker-compose.prod.yml"
+                    ),
+                )
+            )
 
         # DF-003 marker
         if _USER_RE.match(line):
@@ -132,39 +177,55 @@ def check_file(file_path: Path) -> list[Finding]:
 
         # DF-006
         if "StrictHostKeyChecking=no" in line:
-            findings.append(_f(
-                "DF-006", Severity.CRITICAL,
-                "StrictHostKeyChecking=no is a security violation",
-                file_path, idx,
-                fix_hint="Use ssh-keyscan to add the host key to known_hosts beforehand",
-            ))
+            findings.append(
+                _f(
+                    "DF-006",
+                    Severity.CRITICAL,
+                    "StrictHostKeyChecking=no is a security violation",
+                    file_path,
+                    idx,
+                    fix_hint="Use ssh-keyscan to add the host key to known_hosts beforehand",
+                )
+            )
 
         # DF-007
         if "88.198.191.108" in line:
-            findings.append(_f(
-                "DF-007", Severity.CRITICAL,
-                "Hardcoded production server IP 88.198.191.108",
-                file_path, idx,
-                fix_hint="Use a build ARG or environment variable for the host",
-            ))
+            findings.append(
+                _f(
+                    "DF-007",
+                    Severity.CRITICAL,
+                    "Hardcoded production server IP 88.198.191.108",
+                    file_path,
+                    idx,
+                    fix_hint="Use a build ARG or environment variable for the host",
+                )
+            )
 
         # DF-008
         if _HARDCODED_SECRET_RE.search(line):
-            findings.append(_f(
-                "DF-008", Severity.CRITICAL,
-                f"Hardcoded secret in Dockerfile: {line.strip()[:60]}",
-                file_path, idx,
-                fix_hint="Use ARG / ENV with build-time injection, never hardcode",
-            ))
+            findings.append(
+                _f(
+                    "DF-008",
+                    Severity.CRITICAL,
+                    f"Hardcoded secret in Dockerfile: {line.strip()[:60]}",
+                    file_path,
+                    idx,
+                    fix_hint="Use ARG / ENV with build-time injection, never hardcode",
+                )
+            )
 
     # DF-005: single-stage build
     if from_lines and len(from_lines) == 1 and from_lines[0][2] is None:
-        findings.append(_f(
-            "DF-005", Severity.WARNING,
-            "Single-stage Dockerfile — consider multi-stage build for smaller images",
-            file_path, from_lines[0][0],
-            fix_hint="Add a builder stage: FROM python:3.12-slim AS builder",
-        ))
+        findings.append(
+            _f(
+                "DF-005",
+                Severity.WARNING,
+                "Single-stage Dockerfile — consider multi-stage build for smaller images",
+                file_path,
+                from_lines[0][0],
+                fix_hint="Add a builder stage: FROM python:3.12-slim AS builder",
+            )
+        )
 
     # DF-009: non-standard base image (only check the *final* stage)
     if from_lines:
@@ -174,35 +235,52 @@ def check_file(file_path: Path) -> list[Finding]:
         if base != "scratch" and not base.endswith("/builder"):
             named_stages = {n[2] for n in from_lines if n[2]}
             if final[1] not in named_stages and base != "python":
-                findings.append(_f(
-                    "DF-009", Severity.WARNING,
-                    f"Non-standard base image '{final[1]}' — platform default is python:3.12-slim",
-                    file_path, final[0],
-                ))
+                findings.append(
+                    _f(
+                        "DF-009",
+                        Severity.WARNING,
+                        f"Non-standard base image '{final[1]}' — "
+                        "platform default is python:3.12-slim",
+                        file_path,
+                        final[0],
+                    )
+                )
             elif base == "python" and "3.12-slim" not in final[1]:
-                findings.append(_f(
-                    "DF-009", Severity.WARNING,
-                    f"Base image '{final[1]}' deviates from python:3.12-slim",
-                    file_path, final[0],
-                ))
+                findings.append(
+                    _f(
+                        "DF-009",
+                        Severity.WARNING,
+                        f"Base image '{final[1]}' deviates from python:3.12-slim",
+                        file_path,
+                        final[0],
+                    )
+                )
 
     # DF-003: no USER directive
     if from_lines and not has_user:
-        findings.append(_f(
-            "DF-003", Severity.WARNING,
-            "Dockerfile has no USER directive — runs as root by default",
-            file_path, 1,
-            fix_hint='Add: RUN useradd -u 1000 app && USER app',
-        ))
+        findings.append(
+            _f(
+                "DF-003",
+                Severity.WARNING,
+                "Dockerfile has no USER directive — runs as root by default",
+                file_path,
+                1,
+                fix_hint="Add: RUN useradd -u 1000 app && USER app",
+            )
+        )
 
     # DF-004: missing OCI labels
     if from_lines and not has_oci_labels:
-        findings.append(_f(
-            "DF-004", Severity.INFO,
-            "Dockerfile missing OCI labels (org.opencontainers.image.*)",
-            file_path, 1,
-            fix_hint="Add LABEL org.opencontainers.image.source=https://github.com/...",
-        ))
+        findings.append(
+            _f(
+                "DF-004",
+                Severity.INFO,
+                "Dockerfile missing OCI labels (org.opencontainers.image.*)",
+                file_path,
+                1,
+                fix_hint="Add LABEL org.opencontainers.image.source=https://github.com/...",
+            )
+        )
 
     return findings
 
@@ -227,6 +305,7 @@ def check_repo(repo_root: Path) -> list[Finding]:
 
 
 # Helpers -------------------------------------------------------------------
+
 
 def _is_dockerfile(path: Path) -> bool:
     if path.name in {"Dockerfile", "Dockerfile.prod", "Dockerfile.production"}:

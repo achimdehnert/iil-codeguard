@@ -10,13 +10,15 @@ from iil_codeguard.reporters import json_reporter, sarif, text
 
 def _result_with_finding() -> AuditResult:
     return AuditResult(
-        findings=[Finding(
-            rule_id="SL-001",
-            severity=Severity.ERROR,
-            message="Direct ORM access via Trip.objects",
-            location=Location("apps/trips/views.py", 12, 8),
-            fix_hint="Move to services",
-        )],
+        findings=[
+            Finding(
+                rule_id="SL-001",
+                severity=Severity.ERROR,
+                message="Direct ORM access via Trip.objects",
+                location=Location("apps/trips/views.py", 12, 8),
+                fix_hint="Move to services",
+            )
+        ],
         files_scanned=1,
         duration_ms=42,
     )

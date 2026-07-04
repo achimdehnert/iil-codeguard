@@ -23,68 +23,111 @@ from iil_codeguard.domain import (
 
 # Rule registration ----------------------------------------------------------
 
-register_rule(RuleMeta(
-    rule_id="SL-001",
-    name="orm-in-view",
-    description="View contains direct ORM access (Model.objects.*). Move to services.py.",
-    severity=Severity.ERROR,
-    category="SL",
-    adr_refs=("ADR-009", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="SL-002",
-    name="transaction-in-view",
-    description="View contains transaction.atomic(). Transaction handling belongs in services.",
-    severity=Severity.ERROR,
-    category="SL",
-    adr_refs=("ADR-009", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="SL-003",
-    name="queryset-chains-in-view",
-    description="View contains queryset chain (select_related/prefetch_related). Move to services.",
-    severity=Severity.WARNING,
-    category="SL",
-    adr_refs=("ADR-009", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="SL-004",
-    name="model-import-in-view",
-    description="View imports Django model directly. Use services to wrap data access.",
-    severity=Severity.WARNING,
-    category="SL",
-    adr_refs=("ADR-009", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="SL-005",
-    name="raw-sql-in-view",
-    description="View contains raw SQL (connection.cursor / .raw()). Move to services.",
-    severity=Severity.ERROR,
-    category="SL",
-    adr_refs=("ADR-009", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="SL-006",
-    name="missing-services-py",
-    description="App has views.py but no services.py — service-layer not initialized.",
-    severity=Severity.INFO,
-    category="SL",
-    adr_refs=("ADR-009", "ADR-192"),
-))
+register_rule(
+    RuleMeta(
+        rule_id="SL-001",
+        name="orm-in-view",
+        description="View contains direct ORM access (Model.objects.*). Move to services.py.",
+        severity=Severity.ERROR,
+        category="SL",
+        adr_refs=("ADR-009", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="SL-002",
+        name="transaction-in-view",
+        description="View contains transaction.atomic(). Transaction handling belongs in services.",
+        severity=Severity.ERROR,
+        category="SL",
+        adr_refs=("ADR-009", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="SL-003",
+        name="queryset-chains-in-view",
+        description="View contains queryset chain "
+        "(select_related/prefetch_related). Move to services.",
+        severity=Severity.WARNING,
+        category="SL",
+        adr_refs=("ADR-009", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="SL-004",
+        name="model-import-in-view",
+        description="View imports Django model directly. Use services to wrap data access.",
+        severity=Severity.WARNING,
+        category="SL",
+        adr_refs=("ADR-009", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="SL-005",
+        name="raw-sql-in-view",
+        description="View contains raw SQL (connection.cursor / .raw()). Move to services.",
+        severity=Severity.ERROR,
+        category="SL",
+        adr_refs=("ADR-009", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="SL-006",
+        name="missing-services-py",
+        description="App has views.py but no services.py — service-layer not initialized.",
+        severity=Severity.INFO,
+        category="SL",
+        adr_refs=("ADR-009", "ADR-192"),
+    )
+)
 
 
 # AST helpers ----------------------------------------------------------------
 
 # Method names exposed on managers / querysets that indicate ORM data access.
-_ORM_METHODS = frozenset({
-    "filter", "exclude", "get", "get_or_create", "create", "update_or_create",
-    "delete", "save", "bulk_create", "bulk_update", "update", "all", "first",
-    "last", "count", "exists", "values", "values_list", "annotate", "aggregate",
-    "in_bulk", "earliest", "latest",
-    # async variants (Django 4.1+)
-    "aget", "aget_or_create", "acreate", "aupdate_or_create", "adelete",
-    "asave", "aupdate", "afirst", "alast", "acount", "aexists",
-})
+_ORM_METHODS = frozenset(
+    {
+        "filter",
+        "exclude",
+        "get",
+        "get_or_create",
+        "create",
+        "update_or_create",
+        "delete",
+        "save",
+        "bulk_create",
+        "bulk_update",
+        "update",
+        "all",
+        "first",
+        "last",
+        "count",
+        "exists",
+        "values",
+        "values_list",
+        "annotate",
+        "aggregate",
+        "in_bulk",
+        "earliest",
+        "latest",
+        # async variants (Django 4.1+)
+        "aget",
+        "aget_or_create",
+        "acreate",
+        "aupdate_or_create",
+        "adelete",
+        "asave",
+        "aupdate",
+        "afirst",
+        "alast",
+        "acount",
+        "aexists",
+    }
+)
 
 _QUERYSET_OPTIMIZATION = frozenset({"select_related", "prefetch_related"})
 
@@ -207,9 +250,7 @@ class ViewVisitor(ast.NodeVisitor):
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         # SL-004: importing from .models or models.X in views.py
         if node.module and (
-            node.module == "models"
-            or node.module.endswith(".models")
-            or ".models." in node.module
+            node.module == "models" or node.module.endswith(".models") or ".models." in node.module
         ):
             for alias in node.names:
                 self._add(
@@ -240,17 +281,20 @@ class ViewVisitor(ast.NodeVisitor):
         fix_hint: str | None = None,
         context: dict[str, str] | None = None,
     ) -> None:
-        self.findings.append(Finding(
-            rule_id=rule_id,
-            severity=severity,
-            message=message,
-            location=Location(file_path=self.file_path, start_line=line, start_column=col),
-            fix_hint=fix_hint,
-            context=context or {},
-        ))
+        self.findings.append(
+            Finding(
+                rule_id=rule_id,
+                severity=severity,
+                message=message,
+                location=Location(file_path=self.file_path, start_line=line, start_column=col),
+                fix_hint=fix_hint,
+                context=context or {},
+            )
+        )
 
 
 # Public API -----------------------------------------------------------------
+
 
 def check_file(file_path: Path) -> list[Finding]:
     """Check a single Python file for ORM-in-view violations.
@@ -280,20 +324,21 @@ def check_app(app_dir: Path) -> list[Finding]:
     if not view_files:
         return findings
     has_services = any(
-        (app_dir / "services.py").exists()
-        or (app_dir / "services").is_dir()
-        for _ in [0]
+        (app_dir / "services.py").exists() or (app_dir / "services").is_dir() for _ in [0]
     )
     for vf in view_files:
         findings.extend(check_file(vf))
     if not has_services:
         # SL-006 is a once-per-app finding pinned to the views file
-        findings.append(Finding(
-            rule_id="SL-006",
-            severity=Severity.INFO,
-            message=f"App '{app_dir.name}' has views but no services.py — service-layer missing",
-            location=Location(file_path=str(view_files[0]), start_line=1, start_column=1),
-        ))
+        findings.append(
+            Finding(
+                rule_id="SL-006",
+                severity=Severity.INFO,
+                message=f"App '{app_dir.name}' has views but no services.py "
+                "— service-layer missing",
+                location=Location(file_path=str(view_files[0]), start_line=1, start_column=1),
+            )
+        )
     return findings
 
 
@@ -306,6 +351,7 @@ def check_repo(repo_root: Path) -> list[Finding]:
 
 
 # File discovery -------------------------------------------------------------
+
 
 def _is_view_file(file_path: Path) -> bool:
     """Heuristic: a Python file is a view file if its name is views.py
@@ -329,10 +375,22 @@ def _find_view_files(directory: Path) -> list[Path]:
     return candidates
 
 
-_EXCLUDE_DIRS = frozenset({
-    ".venv", "venv", "env", "__pycache__", ".git", ".tox", "node_modules",
-    "site-packages", "dist", "build", ".pytest_cache", ".ruff_cache",
-})
+_EXCLUDE_DIRS = frozenset(
+    {
+        ".venv",
+        "venv",
+        "env",
+        "__pycache__",
+        ".git",
+        ".tox",
+        "node_modules",
+        "site-packages",
+        "dist",
+        "build",
+        ".pytest_cache",
+        ".ruff_cache",
+    }
+)
 
 
 def _find_view_files_recursive(root: Path) -> list[Path]:

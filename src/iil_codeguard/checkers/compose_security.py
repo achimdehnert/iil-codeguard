@@ -22,51 +22,96 @@ from iil_codeguard.domain import (
 
 # Rule registration ----------------------------------------------------------
 
-register_rule(RuleMeta(
-    rule_id="DC-001", name="env-var-interpolation",
-    description="Compose `environment:` block uses ${VAR} interpolation — use env_file instead",
-    severity=Severity.CRITICAL, category="DC", adr_refs=("ADR-022", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DC-002", name="missing-env-file",
-    description="Web service missing `env_file: .env.prod`",
-    severity=Severity.ERROR, category="DC", adr_refs=("ADR-022", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DC-003", name="missing-healthcheck",
-    description="Web service missing `healthcheck:` block",
-    severity=Severity.ERROR, category="DC", adr_refs=("ADR-056", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DC-004", name="missing-memory-limit",
-    description="Service missing `mem_limit` or `deploy.resources.limits.memory`",
-    severity=Severity.WARNING, category="DC", adr_refs=("ADR-021", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DC-005", name="image-not-from-ghcr",
-    description="Image not from `ghcr.io/achimdehnert/` registry",
-    severity=Severity.WARNING, category="DC", adr_refs=("ADR-021", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DC-006", name="missing-restart-policy",
-    description="Service missing `restart: unless-stopped`",
-    severity=Severity.ERROR, category="DC", adr_refs=("ADR-021", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DC-007", name="public-port-binding",
-    description="Service binds port on 0.0.0.0 instead of 127.0.0.1",
-    severity=Severity.INFO, category="DC", adr_refs=("ADR-193",),
-))
-register_rule(RuleMeta(
-    rule_id="DC-008", name="missing-migrate-service",
-    description="No separate `migrate` service in compose — risk of unsafe migrations",
-    severity=Severity.WARNING, category="DC", adr_refs=("ADR-094", "ADR-193"),
-))
-register_rule(RuleMeta(
-    rule_id="DC-009", name="celery-inspect-healthcheck",
-    description="Worker/Beat uses `celery inspect ping` — slim images need `pidof python3.12`",
-    severity=Severity.ERROR, category="DC", adr_refs=("ADR-021",),
-))
+register_rule(
+    RuleMeta(
+        rule_id="DC-001",
+        name="env-var-interpolation",
+        description="Compose `environment:` block uses ${VAR} interpolation — use env_file instead",
+        severity=Severity.CRITICAL,
+        category="DC",
+        adr_refs=("ADR-022", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DC-002",
+        name="missing-env-file",
+        description="Web service missing `env_file: .env.prod`",
+        severity=Severity.ERROR,
+        category="DC",
+        adr_refs=("ADR-022", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DC-003",
+        name="missing-healthcheck",
+        description="Web service missing `healthcheck:` block",
+        severity=Severity.ERROR,
+        category="DC",
+        adr_refs=("ADR-056", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DC-004",
+        name="missing-memory-limit",
+        description="Service missing `mem_limit` or `deploy.resources.limits.memory`",
+        severity=Severity.WARNING,
+        category="DC",
+        adr_refs=("ADR-021", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DC-005",
+        name="image-not-from-ghcr",
+        description="Image not from `ghcr.io/achimdehnert/` registry",
+        severity=Severity.WARNING,
+        category="DC",
+        adr_refs=("ADR-021", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DC-006",
+        name="missing-restart-policy",
+        description="Service missing `restart: unless-stopped`",
+        severity=Severity.ERROR,
+        category="DC",
+        adr_refs=("ADR-021", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DC-007",
+        name="public-port-binding",
+        description="Service binds port on 0.0.0.0 instead of 127.0.0.1",
+        severity=Severity.INFO,
+        category="DC",
+        adr_refs=("ADR-193",),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DC-008",
+        name="missing-migrate-service",
+        description="No separate `migrate` service in compose — risk of unsafe migrations",
+        severity=Severity.WARNING,
+        category="DC",
+        adr_refs=("ADR-094", "ADR-193"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="DC-009",
+        name="celery-inspect-healthcheck",
+        description="Worker/Beat uses `celery inspect ping` — slim images need `pidof python3.12`",
+        severity=Severity.ERROR,
+        category="DC",
+        adr_refs=("ADR-021",),
+    )
+)
 
 
 # Patterns ------------------------------------------------------------------
@@ -83,6 +128,7 @@ _PROD_COMPOSE_NAMES = frozenset({"docker-compose.prod.yml", "docker-compose.prod
 
 
 # Public API ----------------------------------------------------------------
+
 
 def check_file(file_path: Path) -> list[Finding]:
     """Audit a single docker-compose YAML file."""
@@ -106,16 +152,18 @@ def check_file(file_path: Path) -> list[Finding]:
 
     # DC-008: missing migrate service (only for prod compose with web service)
     has_web = any(_is_web_service(n) for n in services)
-    has_migrate = "migrate" in services or any(
-        n.startswith("migrate") for n in services
-    )
+    has_migrate = "migrate" in services or any(n.startswith("migrate") for n in services)
     if is_prod and has_web and not has_migrate:
-        findings.append(_finding(
-            "DC-008", Severity.WARNING,
-            f"{file_path.name}: no separate `migrate` service found",
-            file_path, line=1,
-            fix_hint="Add a one-shot `migrate` service that runs python manage.py migrate",
-        ))
+        findings.append(
+            _finding(
+                "DC-008",
+                Severity.WARNING,
+                f"{file_path.name}: no separate `migrate` service found",
+                file_path,
+                line=1,
+                fix_hint="Add a one-shot `migrate` service that runs python manage.py migrate",
+            )
+        )
 
     for name, svc in services.items():
         if not isinstance(svc, dict):
@@ -135,6 +183,7 @@ def check_repo(repo_root: Path) -> list[Finding]:
 
 
 # Per-service checks --------------------------------------------------------
+
 
 def _check_service(
     name: str,
@@ -161,43 +210,59 @@ def _check_service(
             env_strs = [str(item) for item in env]
         for entry in env_strs:
             if _ENV_INTERP_RE.search(entry):
-                findings.append(_finding(
-                    "DC-001", Severity.CRITICAL,
-                    f"Service '{name}' uses ${{VAR}} interpolation in environment: {entry}",
-                    file_path, line=line,
-                    fix_hint=f"Move to env_file: .env.prod (current: {entry.split('=')[0]})",
-                ))
+                findings.append(
+                    _finding(
+                        "DC-001",
+                        Severity.CRITICAL,
+                        f"Service '{name}' uses ${{VAR}} interpolation in environment: {entry}",
+                        file_path,
+                        line=line,
+                        fix_hint=f"Move to env_file: .env.prod (current: {entry.split('=')[0]})",
+                    )
+                )
 
     # DC-002: web service missing env_file
     if is_prod and is_web and not svc.get("env_file"):
-        findings.append(_finding(
-            "DC-002", Severity.ERROR,
-            f"Web service '{name}' is missing env_file",
-            file_path, line=line,
-            fix_hint="Add: env_file: .env.prod",
-        ))
+        findings.append(
+            _finding(
+                "DC-002",
+                Severity.ERROR,
+                f"Web service '{name}' is missing env_file",
+                file_path,
+                line=line,
+                fix_hint="Add: env_file: .env.prod",
+            )
+        )
 
     # DC-003: web service missing healthcheck
     if is_prod and is_web and not svc.get("healthcheck"):
-        findings.append(_finding(
-            "DC-003", Severity.ERROR,
-            f"Web service '{name}' is missing healthcheck",
-            file_path, line=line,
-            fix_hint=(
-                'Add healthcheck.test: ["CMD-SHELL", "python -c \\"import urllib.request; '
-                'urllib.request.urlopen(\\"http://localhost:8000/livez/\\")\\""]'
-            ),
-        ))
+        findings.append(
+            _finding(
+                "DC-003",
+                Severity.ERROR,
+                f"Web service '{name}' is missing healthcheck",
+                file_path,
+                line=line,
+                fix_hint=(
+                    'Add healthcheck.test: ["CMD-SHELL", "python -c \\"import urllib.request; '
+                    'urllib.request.urlopen(\\"http://localhost:8000/livez/\\")\\""]'
+                ),
+            )
+        )
 
     # DC-004: missing memory limit
     has_mem_limit = svc.get("mem_limit") or _has_deploy_memory_limit(svc)
     if is_prod and not has_mem_limit:
-        findings.append(_finding(
-            "DC-004", Severity.WARNING,
-            f"Service '{name}' has no mem_limit",
-            file_path, line=line,
-            fix_hint="Add: mem_limit: 512m  (or deploy.resources.limits.memory)",
-        ))
+        findings.append(
+            _finding(
+                "DC-004",
+                Severity.WARNING,
+                f"Service '{name}' has no mem_limit",
+                file_path,
+                line=line,
+                fix_hint="Add: mem_limit: 512m  (or deploy.resources.limits.memory)",
+            )
+        )
 
     # DC-005: image not from ghcr.io/achimdehnert/
     image = svc.get("image")
@@ -207,37 +272,51 @@ def _check_service(
         and not image.startswith("ghcr.io/achimdehnert/")
         and not _is_third_party_image(image)
     ):
-        findings.append(_finding(
-                "DC-005", Severity.WARNING,
+        findings.append(
+            _finding(
+                "DC-005",
+                Severity.WARNING,
                 f"Service '{name}' uses non-platform registry: {image}",
-                file_path, line=line,
-            ))
+                file_path,
+                line=line,
+            )
+        )
 
     # DC-006: missing restart policy (only for prod, and only for long-running services)
     if is_prod and not svc.get("restart") and not _is_one_shot(svc):
-        findings.append(_finding(
-            "DC-006", Severity.ERROR,
-            f"Service '{name}' is missing restart policy",
-            file_path, line=line,
-            fix_hint="Add: restart: unless-stopped",
-        ))
+        findings.append(
+            _finding(
+                "DC-006",
+                Severity.ERROR,
+                f"Service '{name}' is missing restart policy",
+                file_path,
+                line=line,
+                fix_hint="Add: restart: unless-stopped",
+            )
+        )
 
     # DC-007: public port binding
     ports = svc.get("ports") or []
     for port in ports:
         port_str = str(port)
         if port_str.startswith("0.0.0.0:") or (
-            ":" in port_str and not port_str.startswith("127.0.0.1:")
+            ":" in port_str
+            and not port_str.startswith("127.0.0.1:")
             and not port_str.startswith("[::1]:")
-            and port_str.count(":") == ":" and len(port_str.split(":")) == 2
+            and port_str.count(":") == ":"
+            and len(port_str.split(":")) == 2
         ):
             # The "host:container" pattern without explicit IP binds to 0.0.0.0
-            findings.append(_finding(
-                "DC-007", Severity.INFO,
-                f"Service '{name}' binds port publicly: {port_str}",
-                file_path, line=line,
-                fix_hint=f"Bind to localhost: 127.0.0.1:{port_str}",
-            ))
+            findings.append(
+                _finding(
+                    "DC-007",
+                    Severity.INFO,
+                    f"Service '{name}' binds port publicly: {port_str}",
+                    file_path,
+                    line=line,
+                    fix_hint=f"Bind to localhost: 127.0.0.1:{port_str}",
+                )
+            )
 
     # DC-009: worker/beat with celery-inspect healthcheck
     if is_worker_beat:
@@ -246,17 +325,23 @@ def _check_service(
             test = hc.get("test")
             test_str = " ".join(test) if isinstance(test, list) else str(test or "")
             if "celery" in test_str and "inspect" in test_str:
-                findings.append(_finding(
-                    "DC-009", Severity.ERROR,
-                    f"Worker/Beat '{name}' uses celery inspect ping healthcheck",
-                    file_path, line=line,
-                    fix_hint='Use ["CMD-SHELL", "pidof python3.12"] (slim images, ADR-021 §3.10)',
-                ))
+                findings.append(
+                    _finding(
+                        "DC-009",
+                        Severity.ERROR,
+                        f"Worker/Beat '{name}' uses celery inspect ping healthcheck",
+                        file_path,
+                        line=line,
+                        fix_hint='Use ["CMD-SHELL", "pidof python3.12"] '
+                        "(slim images, ADR-021 §3.10)",
+                    )
+                )
 
     return findings
 
 
 # Helpers -------------------------------------------------------------------
+
 
 def _is_web_service(name: str) -> bool:
     return name in _WEB_SERVICE_NAMES or any(
@@ -274,10 +359,25 @@ def _has_deploy_memory_limit(svc: dict) -> bool:
 
 
 _THIRD_PARTY_IMAGES = (
-    "postgres", "postgis/postgres", "pgvector/pgvector", "redis", "rabbitmq",
-    "nginx", "traefik", "prom/prometheus", "grafana/grafana", "minio/minio",
-    "elasticsearch", "mongo", "mysql", "mariadb", "memcached", "ollama/ollama",
-    "alpine", "ubuntu", "debian",
+    "postgres",
+    "postgis/postgres",
+    "pgvector/pgvector",
+    "redis",
+    "rabbitmq",
+    "nginx",
+    "traefik",
+    "prom/prometheus",
+    "grafana/grafana",
+    "minio/minio",
+    "elasticsearch",
+    "mongo",
+    "mysql",
+    "mariadb",
+    "memcached",
+    "ollama/ollama",
+    "alpine",
+    "ubuntu",
+    "debian",
 )
 
 

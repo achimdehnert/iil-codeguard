@@ -22,54 +22,99 @@ from iil_codeguard.domain import (
 
 # Rule registration ----------------------------------------------------------
 
-register_rule(RuleMeta(
-    rule_id="HX-001", name="missing-hx-target",
-    description="HTMX element missing required hx-target",
-    severity=Severity.ERROR, category="HX", adr_refs=("ADR-048", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="HX-002", name="missing-hx-swap",
-    description="HTMX element missing required hx-swap",
-    severity=Severity.ERROR, category="HX", adr_refs=("ADR-048", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="HX-003", name="missing-hx-indicator",
-    description="HTMX element missing hx-indicator",
-    severity=Severity.WARNING, category="HX", adr_refs=("ADR-048", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="HX-004", name="missing-data-testid",
-    description="HTMX element missing data-testid for testability",
-    severity=Severity.WARNING, category="HX", adr_refs=("ADR-048", "ADR-192"),
-))
-register_rule(RuleMeta(
-    rule_id="HX-005", name="hx-boost-banned",
-    description="hx-boost banned by ADR-048 (multi-tenant performance issue)",
-    severity=Severity.ERROR, category="HX", adr_refs=("ADR-048",),
-))
-register_rule(RuleMeta(
-    rule_id="HX-006", name="onclick-with-htmx",
-    description="onclick= mixed with hx-* attributes",
-    severity=Severity.ERROR, category="HX", adr_refs=("ADR-048",),
-))
-register_rule(RuleMeta(
-    rule_id="HX-007", name="hx-post-no-csrf",
-    description="hx-post form without {% csrf_token %} in same template",
-    severity=Severity.INFO, category="HX", adr_refs=("ADR-048",),
-))
-register_rule(RuleMeta(
-    rule_id="HX-008", name="partial-extends",
-    description="Partial template (_*.html) contains {% extends %} — should be a fragment",
-    severity=Severity.ERROR, category="HX", adr_refs=("ADR-041", "ADR-048"),
-))
-register_rule(RuleMeta(
-    rule_id="HX-009", name="django-tag-between-htmx-attrs",
-    description=(
-        "Django template tag ({% %}) between HTMX attributes — html.parser cannot "
-        "reliably parse this; move {% if %} to wrap the entire element"
-    ),
-    severity=Severity.ERROR, category="HX", adr_refs=("ADR-048", "ADR-192"),
-))
+register_rule(
+    RuleMeta(
+        rule_id="HX-001",
+        name="missing-hx-target",
+        description="HTMX element missing required hx-target",
+        severity=Severity.ERROR,
+        category="HX",
+        adr_refs=("ADR-048", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="HX-002",
+        name="missing-hx-swap",
+        description="HTMX element missing required hx-swap",
+        severity=Severity.ERROR,
+        category="HX",
+        adr_refs=("ADR-048", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="HX-003",
+        name="missing-hx-indicator",
+        description="HTMX element missing hx-indicator",
+        severity=Severity.WARNING,
+        category="HX",
+        adr_refs=("ADR-048", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="HX-004",
+        name="missing-data-testid",
+        description="HTMX element missing data-testid for testability",
+        severity=Severity.WARNING,
+        category="HX",
+        adr_refs=("ADR-048", "ADR-192"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="HX-005",
+        name="hx-boost-banned",
+        description="hx-boost banned by ADR-048 (multi-tenant performance issue)",
+        severity=Severity.ERROR,
+        category="HX",
+        adr_refs=("ADR-048",),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="HX-006",
+        name="onclick-with-htmx",
+        description="onclick= mixed with hx-* attributes",
+        severity=Severity.ERROR,
+        category="HX",
+        adr_refs=("ADR-048",),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="HX-007",
+        name="hx-post-no-csrf",
+        description="hx-post form without {% csrf_token %} in same template",
+        severity=Severity.INFO,
+        category="HX",
+        adr_refs=("ADR-048",),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="HX-008",
+        name="partial-extends",
+        description="Partial template (_*.html) contains {% extends %} — should be a fragment",
+        severity=Severity.ERROR,
+        category="HX",
+        adr_refs=("ADR-041", "ADR-048"),
+    )
+)
+register_rule(
+    RuleMeta(
+        rule_id="HX-009",
+        name="django-tag-between-htmx-attrs",
+        description=(
+            "Django template tag ({% %}) between HTMX attributes — html.parser cannot "
+            "reliably parse this; move {% if %} to wrap the entire element"
+        ),
+        severity=Severity.ERROR,
+        category="HX",
+        adr_refs=("ADR-048", "ADR-192"),
+    )
+)
 
 
 # HX-009 Pre-Scan -----------------------------------------------------------
@@ -118,32 +163,35 @@ def _scan_hx_009(source: str, file_path: Path) -> list[Finding]:
         # Skip if the surrounding element has no hx-* attribute
         # (rough heuristic: look for "hx-" within 200 chars before the match)
         window_start = max(0, match.start() - 200)
-        window = source[window_start:match.start()]
+        window = source[window_start : match.start()]
         if "hx-" not in window:
             continue
         line = source.count("\n", 0, match.start()) + 1
         col = match.start() - source.rfind("\n", 0, match.start())
-        findings.append(Finding(
-            rule_id="HX-009",
-            severity=Severity.ERROR,
-            message=(
-                "Django template tag between HTMX attributes — html.parser "
-                "cannot parse this reliably"
-            ),
-            location=Location(
-                file_path=str(file_path),
-                start_line=line,
-                start_column=max(col, 1),
-            ),
-            fix_hint=(
-                "Move {% if %} to wrap the entire element instead of between "
-                "attributes (split into two element variants if needed)"
-            ),
-        ))
+        findings.append(
+            Finding(
+                rule_id="HX-009",
+                severity=Severity.ERROR,
+                message=(
+                    "Django template tag between HTMX attributes — html.parser "
+                    "cannot parse this reliably"
+                ),
+                location=Location(
+                    file_path=str(file_path),
+                    start_line=line,
+                    start_column=max(col, 1),
+                ),
+                fix_hint=(
+                    "Move {% if %} to wrap the entire element instead of between "
+                    "attributes (split into two element variants if needed)"
+                ),
+            )
+        )
     return findings
 
 
 # HTML parser ----------------------------------------------------------------
+
 
 class HTMXLinter(HTMLParser):
     """Walk an HTML/Django template and emit HX-* findings."""
@@ -161,7 +209,8 @@ class HTMXLinter(HTMLParser):
         # HX-005: hx-boost
         if "hx-boost" in attrs_dict:
             self._add(
-                "HX-005", Severity.ERROR,
+                "HX-005",
+                Severity.ERROR,
                 f"<{tag}> uses hx-boost (banned by ADR-048)",
                 fix_hint="Replace with explicit hx-get / hx-post on individual links",
             )
@@ -174,7 +223,8 @@ class HTMXLinter(HTMLParser):
         # HX-006: onclick + hx-*
         if "onclick" in attrs_dict:
             self._add(
-                "HX-006", Severity.ERROR,
+                "HX-006",
+                Severity.ERROR,
                 f"<{tag}> mixes onclick= with hx-* attributes",
                 fix_hint="Use hx-trigger or remove onclick handler",
             )
@@ -185,29 +235,34 @@ class HTMXLinter(HTMLParser):
         if any(a in hx_attrs for a in action_attrs):
             if "hx-target" not in hx_attrs:
                 self._add(
-                    "HX-001", Severity.ERROR,
+                    "HX-001",
+                    Severity.ERROR,
                     f"<{tag}> with hx-{_first_action(hx_attrs)} is missing hx-target",
                 )
             if "hx-swap" not in hx_attrs:
                 self._add(
-                    "HX-002", Severity.ERROR,
+                    "HX-002",
+                    Severity.ERROR,
                     f"<{tag}> with hx-{_first_action(hx_attrs)} is missing hx-swap",
                 )
             if "hx-indicator" not in hx_attrs:
                 self._add(
-                    "HX-003", Severity.WARNING,
+                    "HX-003",
+                    Severity.WARNING,
                     f"<{tag}> with hx-{_first_action(hx_attrs)} is missing hx-indicator",
                 )
             if "data-testid" not in attrs_dict:
                 self._add(
-                    "HX-004", Severity.WARNING,
+                    "HX-004",
+                    Severity.WARNING,
                     f"<{tag}> HTMX element is missing data-testid for testability",
                 )
 
         # HX-007: hx-post on form without csrf_token
         if tag == "form" and "hx-post" in hx_attrs and not self.has_csrf_token:
             self._add(
-                "HX-007", Severity.INFO,
+                "HX-007",
+                Severity.INFO,
                 "<form hx-post> without {% csrf_token %} in the same template",
                 fix_hint="Add {% csrf_token %} as the first child of the form",
             )
@@ -220,17 +275,19 @@ class HTMXLinter(HTMLParser):
         fix_hint: str | None = None,
     ) -> None:
         line, col = self.getpos()
-        self.findings.append(Finding(
-            rule_id=rule_id,
-            severity=severity,
-            message=message,
-            location=Location(
-                file_path=self.file_path,
-                start_line=line,
-                start_column=max(col, 1),
-            ),
-            fix_hint=fix_hint,
-        ))
+        self.findings.append(
+            Finding(
+                rule_id=rule_id,
+                severity=severity,
+                message=message,
+                location=Location(
+                    file_path=self.file_path,
+                    start_line=line,
+                    start_column=max(col, 1),
+                ),
+                fix_hint=fix_hint,
+            )
+        )
 
 
 def _first_action(hx_attrs: dict[str, str]) -> str:
@@ -241,6 +298,7 @@ def _first_action(hx_attrs: dict[str, str]) -> str:
 
 
 # Public API -----------------------------------------------------------------
+
 
 def check_file(file_path: Path) -> list[Finding]:
     """Check a single .html template for HTMX compliance."""
@@ -258,16 +316,18 @@ def check_file(file_path: Path) -> list[Finding]:
 
     # HX-008: partial templates with {% extends %}
     if file_path.name.startswith("_") and "{% extends" in source:
-        findings.append(Finding(
-            rule_id="HX-008",
-            severity=Severity.ERROR,
-            message=(
-                f"Partial template '{file_path.name}' contains "
-                "{% extends %} — should be a fragment"
-            ),
-            location=Location(file_path=str(file_path), start_line=1),
-            fix_hint="Remove {% extends %} from partial templates",
-        ))
+        findings.append(
+            Finding(
+                rule_id="HX-008",
+                severity=Severity.ERROR,
+                message=(
+                    f"Partial template '{file_path.name}' contains "
+                    "{% extends %} — should be a fragment"
+                ),
+                location=Location(file_path=str(file_path), start_line=1),
+                fix_hint="Remove {% extends %} from partial templates",
+            )
+        )
 
     has_csrf = "{% csrf_token %}" in source
     is_partial = file_path.name.startswith("_")
@@ -281,10 +341,21 @@ def check_file(file_path: Path) -> list[Finding]:
     return findings
 
 
-_EXCLUDE_DIRS = frozenset({
-    ".venv", "venv", "env", "__pycache__", ".git", ".tox", "node_modules",
-    "site-packages", "dist", "build", ".pytest_cache",
-})
+_EXCLUDE_DIRS = frozenset(
+    {
+        ".venv",
+        "venv",
+        "env",
+        "__pycache__",
+        ".git",
+        ".tox",
+        "node_modules",
+        "site-packages",
+        "dist",
+        "build",
+        ".pytest_cache",
+    }
+)
 
 
 def check_repo(repo_root: Path) -> list[Finding]:

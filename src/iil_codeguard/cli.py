@@ -43,21 +43,26 @@ def _build_parser() -> argparse.ArgumentParser:
     pa = sub.add_parser("audit", help="Audit a repo or directory")
     pa.add_argument("path", nargs="?", default=".", help="Repo root (default: .)")
     pa.add_argument(
-        "--format", choices=["text", "sarif", "json"], default="text",
+        "--format",
+        choices=["text", "sarif", "json"],
+        default="text",
         help="Output format (default: text)",
     )
     pa.add_argument(
         "--severity-threshold",
-        choices=[s.value for s in Severity], default="info",
+        choices=[s.value for s in Severity],
+        default="info",
         help="Minimum severity to report (default: info)",
     )
     pa.add_argument(
-        "--summary-only", action="store_true",
+        "--summary-only",
+        action="store_true",
         help="Only print summary counts (works with --format json)",
     )
     pa.add_argument("-o", "--output", help="Write to file instead of stdout")
     pa.add_argument(
-        "--exit-code", action="store_true",
+        "--exit-code",
+        action="store_true",
         help="Exit with non-zero status if findings >= threshold are present",
     )
 
@@ -65,7 +70,9 @@ def _build_parser() -> argparse.ArgumentParser:
     pc = sub.add_parser("check-file", help="Check a single file")
     pc.add_argument("file", help="Path to a .py or .html file")
     pc.add_argument(
-        "--format", choices=["text", "sarif", "json"], default="text",
+        "--format",
+        choices=["text", "sarif", "json"],
+        default="text",
     )
 
     # list-rules
