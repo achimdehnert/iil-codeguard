@@ -74,9 +74,7 @@ def check_file(file_path: Path) -> AuditResult:
         findings.extend(orm_in_view.check_file(file_path))
     elif file_path.suffix == ".html":
         findings.extend(htmx_required_attrs.check_file(file_path))
-    elif file_path.suffix in {".yml", ".yaml"} and file_path.name.startswith(
-        "docker-compose"
-    ):
+    elif file_path.suffix in {".yml", ".yaml"} and file_path.name.startswith("docker-compose"):
         findings.extend(compose_security.check_file(file_path))
     elif file_path.name == "Dockerfile" or file_path.name.startswith("Dockerfile."):
         findings.extend(dockerfile_audit.check_file(file_path))

@@ -60,10 +60,17 @@ def test_should_exit_nonzero_with_exit_code_flag(tmp_path, capsys):
         "def x(r):\n    Trip.objects.all()\n",
         encoding="utf-8",
     )
-    rc = main([
-        "audit", str(tmp_path), "--format", "text",
-        "--severity-threshold", "error", "--exit-code",
-    ])
+    rc = main(
+        [
+            "audit",
+            str(tmp_path),
+            "--format",
+            "text",
+            "--severity-threshold",
+            "error",
+            "--exit-code",
+        ]
+    )
     assert rc == 1
 
 
